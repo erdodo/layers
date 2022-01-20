@@ -18,7 +18,7 @@
                                 <option value="link">Url</option>
                             </select>
                         </div>
-                        <button class="btn btn-light-primary form-control my-2" @click="ekle">Ekle</button>
+                        <button class="btn btn-light-primary form-control my-2" @click="addProperty">Ekle</button>
 
                     </div>
 
@@ -33,11 +33,11 @@
                     <div class="modal-body">
                         <div class="form-group my-2">
                             <label for="">Özellik ismi</label>
-                            <input type="text" class="form-control" v-model="updatePropertyName" placeholder="Özellik İsmi"/>
+                            <input type="text" class="form-control" v-model="getUpdatePropData.name" placeholder="Özellik İsmi"/>
                         </div>
                         <div class="form-group my-2">
                             <label for="">Özellik Tipi</label>
-                            <select class="form-select" aria-label="Select example" v-model="updatePropertyType">
+                            <select class="form-select" aria-label="Select example" v-model="getUpdatePropData.type">
                                 <option>Özellik Tipi</option>
                                 <option value="text">Yazı</option>
                                 <option value="number">Sayi</option>
@@ -46,9 +46,9 @@
                         </div>
                         <div class="form-group my-2">
                             <label for="">İçerik</label>
-                            <input type="text" class="form-control" v-model="updatePropertyContent" placeholder="Özellik İsmi"/>
+                            <input type="text" class="form-control" v-model="getUpdatePropData.propertyContent.content" placeholder="Özellik İsmi"/>
                         </div>
-                        <button class="btn btn-light-primary form-control my-2" @click="update">Ekle</button>
+                        <button class="btn btn-light-primary form-control my-2" @click="updateProperty">Güncelle</button>
 
                     </div>
 
@@ -56,6 +56,31 @@
             </div>
         </div>
         <!-- end: Edit property -->
+        <!-- begin:: New Layer -->
+        <div class="modal fade" tabindex="-1" id="addLayer">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <div class="form-group my-2">
+                            <label for="">Katman ismi</label>
+                            <input type="text" class="form-control" v-model="addLayer.name" placeholder="Katman ismi"/>
+                        </div>
+                        <div class="form-group my-2">
+                            <label for="">Katman İkon</label>
+                           <input type="text" class="form-control" v-model="addLayer.icon" placeholder="Katman ismi"/>
+                        </div>
+                        <div class="form-group my-2">
+                            <label for="">Katman Detay</label>
+                            <textarea class="form-control" v-model="addLayer.detail" cols="30" rows="10"></textarea>
+                        </div>
+                        <button class="btn btn-light-primary form-control my-2" @click="addLayerFunc">Ekle</button>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <!-- end: New Layer -->
     </div>
 </template>
 
@@ -69,13 +94,15 @@
             return {
                 addPropertyName: '',
                 addPropertyType: '',
-                updatePropertyName: '',
-                updatePropertyType: '',
-                updatePropertyContent: '',
+                addLayer: {
+                    name: '',
+                    detail: '',
+                    icon: '',
+                },
             }
         },
         methods: {
-            ekle(){
+            addProperty(){
                 axios.get('update/propertyAdd', {
                     params: {
                         name: this.addPropertyName,
@@ -104,28 +131,26 @@
                     });
                 })
             },
-            update(){
-                console.log(this.getUpdatePropData?.propertyContent?.id==null?this.getUpdatePropData?.propertyContent?.id:0);
+            updateProperty(){
                 axios.get('update/propertyUpdate', {
                     params: {
-                        id:this.getUpdatePropData.id,
-                        name: this.updatePropertyName,
-                        type: this.updatePropertyType,
-                        contentId: this.getUpdatePropData.propertyContent.id,
-                        content: this.updatePropertyContent,
+                        prop:this.getUpdatePropData
                     }
                 }).then(response => {
-                    if(response.data.status == true){
+                    if(response.data.contentStatus == true && response.data.propStatus == true){
                         Swal.fire({
                             title: 'Başarılı',
                             text: 'Özellik güncellendi',
                             icon: 'success',
                             confirmButtonText: 'Tamam'
-                        }).then(() => {
-                            this.updatePropertyName = '';
-                            this.updatePropertyType = '';
-                            this.updatePropertyContent = '';
-                        });
+                        })
+                    }else{
+                        Swal.fire({
+                            title: 'Hata',
+                            text: 'Özellik güncellenemedi',
+                            icon: 'error',
+                            confirmButtonText: 'Tamam'
+                        })
                     }
                 }).catch(error => {
                     console.log(error);
@@ -136,18 +161,48 @@
                         confirmButtonText: 'Tamam'
                     });
                 })
-            }
+            },
+            addLayerFunc(){
+                axios.get('update/layerAdd', {
+                    params: {
+                        name: this.addLayer.name,
+                        detail: this.addLayer.detail,
+                        icon: this.addLayer.icon,
+                        url: this.$route.path,
+                        token:123
+                    }
+                }).then(response => {
+                    if(response.data.status == true){
+                        Swal.fire({
+                            title: 'Başarılı',
+                            text: 'Katman eklendi',
+                            icon: 'success',
+                            confirmButtonText: 'Tamam'
+                        }).then(() => {
+                            this.addLayer.name = '';
+                            this.addLayer.detail = '';
+                            this.addLayer.icon = '';
+                        });
+                    }
+                }).catch(error => {
+                    console.log(error);
+                    Swal.fire({
+                        title: 'Hata',
+                        text: 'Katman eklenemedi',
+                        icon: 'error',
+                        confirmButtonText: 'Tamam'
+                    });
+                })
+            },
         },
         computed:{
             ...mapGetters([
                 'getUpdatePropData'
             ])
         },
-        watch: {
+        watch:{
             getUpdatePropData(){
-                this.updatePropertyName = this.getUpdatePropData.name;
-                this.updatePropertyType = this.getUpdatePropData.type;
-                this.updatePropertyContent = this.getUpdatePropData.propertyContent?.content ? this.getUpdatePropData.propertyContent.content : '';
+                console.log(this.getUpdatePropData);
             }
         }
     }

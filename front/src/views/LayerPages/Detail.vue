@@ -150,7 +150,7 @@
                     </div>
                     <!--end::Title-->
                     <!--begin::Stats-->
-                    <div class="d-flex flex-wrap flex-stack">
+                    <div class="d-flex flex-wrap flex-stack" v-if="data.layer.up!=0">
                         <!--begin::Wrapper-->
                         <div class="d-flex flex-column flex-grow-1 pe-8">
                             <!--begin::Stats-->
@@ -200,6 +200,8 @@
         props: ['data'],
         methods: {
             updateProp(prop) {
+                var property= prop;
+                property['layerId']=this.data.layer.id;
                 this.$store.commit('setUpdatePropData', prop);
             }
         },

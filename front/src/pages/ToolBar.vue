@@ -130,7 +130,7 @@
                 <!--end::Wrapper-->
                 <!--begin::Button-->
                 <a href="#" class="btn btn-bg-white btn-active-color-primary" data-bs-toggle="modal"
-                    data-bs-target="#kt_modal_create_app" id="kt_toolbar_primary_button">Create</a>
+                    data-bs-target="#addLayer" id="addLayerbUTTON">Katman oluştur</a>
                 <!--end::Button-->
             </div>
             <!--end::Actions-->
