@@ -5,4 +5,6 @@ $route['default_controller'] = 'layers';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 
-$route['(.+)'] = 'layers/getLayer/$1';
+$route['update/(.+)']='update/$1';
+$route['layers/(.+)'] = 'layers/getLayer/$1';    
+

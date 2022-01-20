@@ -1,6 +1,8 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
-
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, PATCH, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: *');
 
 class Layers extends CI_Controller
 {
@@ -62,10 +64,9 @@ class Layers extends CI_Controller
         }
         echo json_encode($data);
     }
-    public function getAccess($val,$key)
+    public function getAccess($id,$token,$shareToken)
     {
-        $token=$this->input->post_get('token');
-        $shareToken=$this->input->get('shareToken');
+        
         $data=array();
         if($token){
             //üye kullanıcı verileri
@@ -78,23 +79,21 @@ class Layers extends CI_Controller
                 echo json_encode($data);
                 return;
             }
-            $id=$this->Layers_model->get_id(['url'=>$val]);
-            if($id==null) return 0;
-            else $id=$id->id;
+            
             return $this->Access_model->get(array("userId"=>$profile->id ,'layerId'=>$id, 'limitNo>'=>0))==null? 0: 1;//kullanıcının yetkileri
         }elseif($shareToken){
             //paylaşılmış katman verileri
             $this->load->model("Share_model");
-            $id=$this->Layers_model->get_id(['url'=>$val])->id;
-            return $this->Access_model->get(array("userId"=>$profile->id ,'layerId'=>$id, 'limitNo>'=>0))==null? 0: 1;//kullanıcının yetkileri
+            return $this->Share_model->get(array("token"=>$shareToken ,'layerId'=>$id, 'limitNo>'=>0))==null? 0: 1;//kullanıcının yetkileri
         }else{
             //erişim yok
-            return 0;
+            return 'token yok';
         }
     }
     public function getLayer()
     {
         $segs = $this->uri->segment_array();//url segmentleri
+        
         if($segs[1]==""){
             $data['errorMessage']="Katman bulunamadı";
             $data['status']='error';
@@ -103,7 +102,15 @@ class Layers extends CI_Controller
         }elseif($segs[1]=='list'){
             $this->list();
             return;
+        }elseif($segs[1]=='getBreadcrumb'){
+            $url=$this->input->post_get('url');
+            $this->getBreadcrumb($url);
+            return;
+        }elseif($segs[1]=='propertyAdd'){
+            $this->propertyAdd();
+            return;
         }
+        
 
         $this->load->model("User_model");
         $this->load->model("Access_model");
@@ -129,14 +136,18 @@ class Layers extends CI_Controller
         $howManyProperty=$this->input->post_get('howManyProperty');
         $pageProperty=$this->input->post_get('pageProperty');
 
-        $url=implode("/", $segs);//segmentleri veritabanındaki haline dönüştür (birleştir)
-        if($this->getAccess('/'.$url,'url')!=1){//erişim yok
+        $url=$this->input->post_get('url');
+        $id=$this->Layers_model->get_id(['url'=>$url])->id;
+        $token=$this->input->post_get('token');
+        $shareToken=$this->input->post_get('shareToken');
+        if($this->getAccess($id,$token,$shareToken)!=1){//erişim yok
+            $data['access']=$this->getAccess($id,$token,$shareToken);
             $data['errorMessage']="Erişim Bulunamadı";
             $data['status']='error';
             echo json_encode($data);
             return;
         }
-        $data['layer']=$this->Layers_model->get(array("url"=>'/'.$url));
+        $data['layer']=$this->Layers_model->get(['id'=>$id]);
         $accessList=$this->Access_model->getir($howManyAccess,$pageAccess,[],array("layerId"=>$data['layer']->id , 'limitNo>'=>0));
         foreach ($accessList as $key => $value) {
             $data['access'][$key]=$value;
@@ -150,18 +161,21 @@ class Layers extends CI_Controller
             $property=$this->Property_model->get_all(array("layerUpId"=>$data['layer']->up));
             foreach ($property as $key => $value) {
                 $data['property'][$key]=$value;
-                $data['property'][$key]->propertyContent=$this->PropertyContent_model->get_all(array("propertyId"=>$value->id));
+                $data['property'][$key]->propertyContent=$this->PropertyContent_model->get(array("propertyId"=>$value->id , "layerId"=>$data['layer']->id));
             }
         }
         
         $allChild=$this->Layers_model->getir($howManyChild,$pageChild,[],array("up"=>$data['layer']->id));
         foreach ($allChild as $key => $value) {
             $data['child'][$key]=$value;
+            
             $data['child'][$key]->property=$this->Property_model->get_all(array("layerUpId"=>$data['layer']->id));
             foreach ($data['child'][$key]->property as $key2 => $value2) {
-                $data['child'][$key]->property[$key2]->propertyContent=$this->PropertyContent_model->get_all(array("propertyId"=>$value2->id));
+                $data['child'][$key]->property[$key2]->propertyContent=$this->PropertyContent_model->get(array("propertyId"=>$value2->id, "layerId"=>$value->id));
             }
         }
+        $data['childProperty']=$this->Property_model->get_all(array("layerUpId"=>$data['layer']->id));
         echo json_encode($data);
     }
+    
 }
