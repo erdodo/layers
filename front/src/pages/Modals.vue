@@ -105,7 +105,7 @@
                 })
             },
             update(){
-                console.log(this.getUpdatePropData?.propertyContent?.id==null?this.getUpdatePropData?.propertyContent?.id:0);
+                console.log(this.getUpdatePropData?.propertyContent!=null?this.getUpdatePropData?.propertyContent?.id:0);
                 axios.get('update/propertyUpdate', {
                     params: {
                         id:this.getUpdatePropData.id,
